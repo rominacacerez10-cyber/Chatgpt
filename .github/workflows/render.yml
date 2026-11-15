@@ -1,0 +1,36 @@
+name: Render video
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install project dependencies
+        run: npm install
+      - name: Install audio dependencies
+        run: pip install edge-tts numpy
+      - name: Generate Spanish voice, music and effects
+        run: python scripts/generate_audio.py
+      - name: Render MP4
+        run: npx remotion render src/index.ts EgoMotivacionObsesion out/ego-motivacion-obsesion.mp4 --codec h264 --crf 18
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ego-motivacion-obsesion-mp4
+          path: out/ego-motivacion-obsesion.mp4
+          if-no-files-found: error
+          retention-days: 30
